@@ -20,7 +20,7 @@ const MASTER_RULES = [
     { rule_id: "ACC-EMPTY-ANCHORS", category: "accessibility", title: "Links have empty anchor text" },
     { rule_id: "ACC-ARIA-MISSING", category: "accessibility", title: "ARIA attributes missing" },
     { rule_id: "ACC-SKIP-LINK-MISSING", category: "accessibility", title: "Skip link missing" },
-    
+
     // Compliance
     { rule_id: "COM-PRIVACY-MISSING", category: "compliance", title: "Missing Privacy Policy" },
     { rule_id: "COM-TERMS-MISSING", category: "compliance", title: "Missing Terms of Service" },
@@ -108,7 +108,7 @@ const FRAMEWORK_MAP: Record<string, string[]> = {
     "SEC-CORS-VERIFY": ["OWASP A01", "PCI-DSS 6.5.10", "SOC 2 CC6.1", "NIST AC-3"],
     "STR-API-DISCOVERY": ["OWASP A01", "PCI-DSS 6.5.10", "NIST AC-2", "SOC 2 CC6.1"],
     "STR-INFO-DISCLOSURE": ["OWASP A01", "PCI-DSS 6.5.10", "NIST SI-12", "SOC 2 CC6.1", "HIPAA 164.312"],
-    
+
     // Compliance Specific
     "COM-AUTH-SEC": ["OWASP A07", "PCI-DSS 8.2", "SOC 2 CC6.1", "HIPAA 164.308", "NIST IA-2", "OWASP Top 10"],
     "COM-RBAC-SEC": ["OWASP A01", "PCI-DSS 7.1", "SOC 2 CC6.1", "HIPAA 164.308", "NIST AC-3", "OWASP Top 10"],
@@ -230,7 +230,7 @@ export async function evaluateRules(scanId: string) {
         // 4. Save Findings to DB
         logger.info(`[SCAN:${scanId}] ð¾ Saving findings to database...`);
         // --- AI Enhanced Summary (Sprint 3) ---
-        const homePage = pages.find(p => p.depth === 0);
+        const homePage = pages.find((p: any) => p.depth === 0);
         const homePageSignals = homePage?.extracted_json;
         const homePageHtml = (homePageSignals as any)?.cleaned_html;
         const aiSummary = await getAiSummary(finalScore, findings, homePage?.url || "", homePageSignals, homePageHtml);
@@ -255,18 +255,18 @@ export async function evaluateRules(scanId: string) {
                 }))
             });
         }
- 
+
         // 5. Calculate Framework Statuses for UI
         const frameworks = ["OWASP Top 10", "PCI-DSS", "SOC 2", "HIPAA", "NIST 800-53"];
         const frameworkSummary = frameworks.map(fw => {
             const fwSearch = fw.split(' ')[0].toLowerCase(); // e.g. "owasp"
-            const fwFindings = findings.filter(f => 
+            const fwFindings = findings.filter(f =>
                 f.frameworks?.some(ff => {
                     const ffLower = ff.toLowerCase();
                     return ffLower.includes(fwSearch) || fw.toLowerCase().includes(ffLower);
                 })
             );
-            
+
             let status = "pass";
             if (fwFindings.some(f => f.severity === 'critical' || f.severity === 'high')) {
                 status = "fail";
@@ -311,7 +311,7 @@ export async function evaluateRules(scanId: string) {
 // âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 function runAccessibilityRules(pages: any[], findings: FindingInput[]) {
-    pages.filter(p => (p.content_type || "").includes("html")).forEach(page => {
+    pages.filter((p: any) => (p.content_type || "").includes("html")).forEach(page => {
         const data = page.extracted_json as any;
         if (!data) return;
 
@@ -462,8 +462,8 @@ function runAccessibilityRules(pages: any[], findings: FindingInput[]) {
 }
 
 function runComplianceRules(pages: any[], findings: FindingInput[]) {
-    const allInternalLinks = pages.flatMap(p => p.extracted_json?.links_internal || []);
-    const homePage = pages.find(p => p.depth === 0);
+    const allInternalLinks = pages.flatMap((p: any) => p.extracted_json?.links_internal || []);
+    const homePage = pages.find((p: any) => p.depth === 0);
     const bodyContent = homePage?.extracted_json?.body_text_sample || "";
 
     // Helper: Check if link list contains specific keywords in URL or Text
@@ -514,7 +514,7 @@ function runComplianceRules(pages: any[], findings: FindingInput[]) {
     }
 
     // COM-004: Cookie Banner (Agent Signal)
-    const hasAnyCookieBanner = pages.some(p => p.extracted_json?.compliance?.has_cookie_banner);
+    const hasAnyCookieBanner = pages.some((p: any) => p.extracted_json?.compliance?.has_cookie_banner);
     if (!hasAnyCookieBanner) {
         findings.push({
             rule_id: "COM-COOKIE-BANNER-MISSING",
@@ -527,7 +527,7 @@ function runComplianceRules(pages: any[], findings: FindingInput[]) {
     }
 
     // NEW ADVANCED COMPLIANCE RULES
-    
+
     // COM-AUTH-SEC: Authentication Mechanism Security
     findings.push({
         rule_id: "COM-AUTH-SEC",
@@ -550,7 +550,7 @@ function runComplianceRules(pages: any[], findings: FindingInput[]) {
     });
 
     // COM-DATA-PROTECTION: Privacy Policy and Data Protection
-    const privacyPage = pages.find(p => p.url.toLowerCase().includes('privacy'));
+    const privacyPage = pages.find((p: any) => p.url.toLowerCase().includes('privacy'));
     if (privacyPage) {
         findings.push({
             rule_id: "COM-DATA-PROTECTION",
@@ -589,7 +589,7 @@ function runComplianceRules(pages: any[], findings: FindingInput[]) {
 
 function runTrustRules(pages: any[], findings: FindingInput[]) {
     // TRU-001: SSL Validity
-    const homePage = pages.find(p => p.depth === 0);
+    const homePage = pages.find((p: any) => p.depth === 0);
     if (homePage) {
         if (!homePage.url.startsWith('https')) {
             findings.push({
@@ -626,7 +626,7 @@ function runTrustRules(pages: any[], findings: FindingInput[]) {
     }
 
     // TRU-002: Meta Description
-    pages.filter(p => (p.content_type || "").includes("html")).forEach(p => {
+    pages.filter((p: any) => (p.content_type || "").includes("html")).forEach((p: any) => {
         // ... (existing meta desc logic remains or is slightly refactored)
         const data = p.extracted_json as any;
         if (!p.meta?.description) {
@@ -688,7 +688,7 @@ function runTrustRules(pages: any[], findings: FindingInput[]) {
     // TRU-008: Security Headers (Expanded)
     if (homePage?.extracted_json?.security_headers) {
         const h = homePage.extracted_json.security_headers;
-        
+
         // HSTS (Upgraded)
         if (!h.hsts) {
             findings.push({ rule_id: "SEC-HSTS-MISSING", category: "trust", severity: "critical", message: "Missing Strict-Transport-Security (HSTS).", how_to_fix: "Add header: Strict-Transport-Security: max-age=31536000; includeSubDomains; preload.", difficulty: "easy" });
@@ -722,10 +722,10 @@ function runTrustRules(pages: any[], findings: FindingInput[]) {
 }
 
 function runStructureRules(pages: any[], findings: FindingInput[]) {
-    const homePage = pages.find(p => p.depth === 0);
-    const allInternalLinks = pages.flatMap(p => p.extracted_json?.links_internal || []);
+    const homePage = pages.find((p: any) => p.depth === 0);
+    const allInternalLinks = pages.flatMap((p: any) => p.extracted_json?.links_internal || []);
 
-    pages.filter(p => (p.content_type || "").includes("html")).forEach(page => {
+    pages.filter((p: any) => (p.content_type || "").includes("html")).forEach(page => {
         const data = page.extracted_json as any;
         if (!data) return;
 
@@ -921,7 +921,7 @@ function runStructureRules(pages: any[], findings: FindingInput[]) {
 
     // STR-003: Duplicate Titles
     const titleMap = new Map<string, string[]>();
-    pages.filter(p => (p.content_type || "").includes("html")).forEach(p => {
+    pages.filter((p: any) => (p.content_type || "").includes("html")).forEach((p: any) => {
         if (p.title) {
             const list = titleMap.get(p.title) || [];
             list.push(p.url);
@@ -944,7 +944,7 @@ function runStructureRules(pages: any[], findings: FindingInput[]) {
     });
 
     // STR-004: Robots.txt existence
-    const robotsPage = pages.find(p => p.url.endsWith('/robots.txt'));
+    const robotsPage = pages.find((p: any) => p.url.endsWith('/robots.txt'));
     if (!robotsPage || robotsPage.status_code !== 200) {
         findings.push({
             rule_id: "STR-ROBOTS-MISSING",
@@ -953,81 +953,81 @@ function runStructureRules(pages: any[], findings: FindingInput[]) {
             message: "Missing or inaccessible robots.txt file.",
             how_to_fix: "Create a robots.txt file at the root to guide search engine crawlers.",
             difficulty: "easy",
-            evidence: { url: `${pages.find(p => p.depth === 0)?.url || ''}robots.txt` }
+            evidence: { url: `${pages.find((p: any) => p.depth === 0)?.url || ''}robots.txt` }
         });
     }
 
-        // BROKEN LINKS
-        const brokenPages = pages.filter(p => p.status_code >= 400 && !p.url.endsWith('/robots.txt'));
-        if (brokenPages.length > 0) {
-            findings.push({
-                rule_id: "STR-BROKEN-LINKS",
-                category: "structure",
-                severity: "high",
-                message: `${brokenPages.length} broken links (404 or 500 errors) detected.`,
-                how_to_fix: "Check for broken links or server errors and redirect or fix the URLs.",
-                difficulty: "medium",
-                evidence: { count: brokenPages.length, urls: brokenPages.map(p => ({ url: p.url, status: p.status_code })) }
-            });
-        }
+    // BROKEN LINKS
+    const brokenPages = pages.filter((p: any) => p.status_code >= 400 && !p.url.endsWith('/robots.txt'));
+    if (brokenPages.length > 0) {
+        findings.push({
+            rule_id: "STR-BROKEN-LINKS",
+            category: "structure",
+            severity: "high",
+            message: `${brokenPages.length} broken links (404 or 500 errors) detected.`,
+            how_to_fix: "Check for broken links or server errors and redirect or fix the URLs.",
+            difficulty: "medium",
+            evidence: { count: brokenPages.length, urls: brokenPages.map((p: any) => ({ url: p.url, status: p.status_code })) }
+        });
+    }
 
-        // NEW ADVANCED STRUCTURE RULES
-        
-        // INF-DOMAIN-INFO: Domain Information Identified
-        if (homePage) {
-            findings.push({
-                rule_id: "INF-DOMAIN-INFO",
-                category: "structure",
-                severity: "low",
-                message: "Domain information identified for project context.",
-                how_to_fix: "No action required. Business model and purpose identified.",
-                difficulty: "easy",
-                evidence: { domain: homePage.domain || new URL(homePage.url).hostname }
-            });
-        }
+    // NEW ADVANCED STRUCTURE RULES
 
-        // INF-PUBLIC-INFRA: Limited Public Infrastructure Information
-        const serverHeader = homePage?.extracted_json?.security_headers?.server;
-        if (serverHeader) {
-            findings.push({
-                rule_id: "INF-PUBLIC-INFRA",
-                category: "trust",
-                severity: "low",
-                message: "Limited Public Infrastructure Information Disclosed.",
-                how_to_fix: "Consider implementing a security.txt file at /.well-known/security.txt.",
-                difficulty: "easy",
-                evidence: { server: serverHeader }
-            });
-        }
+    // INF-DOMAIN-INFO: Domain Information Identified
+    if (homePage) {
+        findings.push({
+            rule_id: "INF-DOMAIN-INFO",
+            category: "structure",
+            severity: "low",
+            message: "Domain information identified for project context.",
+            how_to_fix: "No action required. Business model and purpose identified.",
+            difficulty: "easy",
+            evidence: { domain: homePage.domain || new URL(homePage.url).hostname }
+        });
+    }
 
-        // STR-API-DISCOVERY: API Endpoint Discovery
-        const apiLinks = allInternalLinks.filter((l: any) => l.href.includes('/api/') || l.href.includes('graphql') || l.href.includes('swagger'));
-        if (apiLinks.length > 0) {
-            findings.push({
-                rule_id: "STR-API-DISCOVERY",
-                category: "structure",
-                severity: "medium",
-                message: "API Endpoint Discovery and Documentation.",
-                how_to_fix: "Implement API authentication (OAuth 2.0) and rate limiting.",
-                difficulty: "medium",
-                evidence: { count: apiLinks.length, examples: apiLinks.slice(0, 3) }
-            });
-        }
+    // INF-PUBLIC-INFRA: Limited Public Infrastructure Information
+    const serverHeader = homePage?.extracted_json?.security_headers?.server;
+    if (serverHeader) {
+        findings.push({
+            rule_id: "INF-PUBLIC-INFRA",
+            category: "trust",
+            severity: "low",
+            message: "Limited Public Infrastructure Information Disclosed.",
+            how_to_fix: "Consider implementing a security.txt file at /.well-known/security.txt.",
+            difficulty: "easy",
+            evidence: { server: serverHeader }
+        });
+    }
 
-        // STR-INFO-DISCLOSURE: Information Disclosure via Endpoints
-        const sensitivePaths = ['.env', '.git', '.backup', 'phpinfo', 'config.php'];
-        const exposedSensitives = pages.filter(p => sensitivePaths.some(s => p.url.includes(s)) && p.status_code === 200);
-        if (exposedSensitives.length > 0) {
-            findings.push({
-                rule_id: "STR-INFO-DISCLOSURE",
-                category: "structure",
-                severity: "critical",
-                message: "Information Disclosure via Sensitive Endpoints.",
-                how_to_fix: "Disable access to development artifacts like .env, .git, or backup files.",
-                difficulty: "easy",
-                evidence: { count: exposedSensitives.length, examples: exposedSensitives.map(p => p.url) }
-            });
-        }
+    // STR-API-DISCOVERY: API Endpoint Discovery
+    const apiLinks = allInternalLinks.filter((l: any) => l.href.includes('/api/') || l.href.includes('graphql') || l.href.includes('swagger'));
+    if (apiLinks.length > 0) {
+        findings.push({
+            rule_id: "STR-API-DISCOVERY",
+            category: "structure",
+            severity: "medium",
+            message: "API Endpoint Discovery and Documentation.",
+            how_to_fix: "Implement API authentication (OAuth 2.0) and rate limiting.",
+            difficulty: "medium",
+            evidence: { count: apiLinks.length, examples: apiLinks.slice(0, 3) }
+        });
+    }
+
+    // STR-INFO-DISCLOSURE: Information Disclosure via Endpoints
+    const sensitivePaths = ['.env', '.git', '.backup', 'phpinfo', 'config.php'];
+    const exposedSensitives = pages.filter(p => sensitivePaths.some(s => p.url.includes(s)) && p.status_code === 200);
+    if (exposedSensitives.length > 0) {
+        findings.push({
+            rule_id: "STR-INFO-DISCLOSURE",
+            category: "structure",
+            severity: "critical",
+            message: "Information Disclosure via Sensitive Endpoints.",
+            how_to_fix: "Disable access to development artifacts like .env, .git, or backup files.",
+            difficulty: "easy",
+            evidence: { count: exposedSensitives.length, examples: exposedSensitives.map(p => p.url) }
+        });
+    }
 }
 
 function normalizeUrl(urlStr: string): string {
