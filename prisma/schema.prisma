@@ -1,0 +1,78 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                   String    @unique @db.VarChar(255)
+  is_verified             Boolean   @default(false)
+  verify_token            String?   @db.VarChar(255)
+  verify_token_expires_at DateTime? @db.Timestamp(6)
+  created_at              DateTime  @default(now()) @db.Timestamp(6)
+  updated_at              DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+
+  scans                   Scan[]
+
+  @@map("users")
+}
+
+model Scan {
+  id                String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  url               String      @db.Text
+  domain            String      @default("") @db.VarChar(255) // The normalized hostname used for project identification
+  ssl_info          Json?       // Stores SSL validity, expiry, and issuer
+  status            String      @default("queued") // queued, crawling, rules_evaluation, preview_ready, complete, failed
+  score             Int?
+  is_paid           Boolean     @default(false)
+  user_id           String      @db.Uuid
+  user              User        @relation(fields: [user_id], references: [id])
+  executive_summary String?     @db.Text
+  categories        Json?       // Detailed category breakdown and scores
+  passed_checks     Json?       // List of good things
+  findings_summary  Json?       // Simple category counts (legacy support)
+  scan_pages        ScanPage[]
+  findings          Finding[]
+  created_at        DateTime    @default(now()) @db.Timestamp(6)
+  updated_at        DateTime    @default(now()) @updatedAt @db.Timestamp(6)
+
+  @@map("scans")
+}
+
+model ScanPage {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scan_id        String   @db.Uuid
+  scan           Scan     @relation(fields: [scan_id], references: [id])
+  url            String   @db.Text
+  depth          Int      @default(0)
+  status_code    Int?
+  content_type   String?
+  title          String?  @db.Text
+  meta           Json?    // Stores meta description and other tags
+  extracted_json Json?    // Stores signals like links, headers, images, forms
+  raw_html       String?  @db.Text  // NEW: Store full raw HTML for line mapping
+  created_at     DateTime @default(now()) @db.Timestamp(6)
+
+  @@map("scan_pages")
+}
+
+model Finding {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scan_id     String   @db.Uuid
+  scan        Scan     @relation(fields: [scan_id], references: [id])
+  rule_id     String   @db.VarChar(100)
+  category    String   @db.VarChar(50) // accessibility, compliance, trust, structure
+  severity    String   @db.VarChar(20) // critical, high, medium, low
+  message     String   @db.Text
+  how_to_fix  String?  @db.Text
+  difficulty  String?  @db.VarChar(20) // easy, medium, hard
+  evidence    Json?    // Specific clues or HTML snippets
+  frameworks  String[] @default([]) // NEW: OWASP, PCI-DSS, SOC 2, HIPAA, NIST
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+
+  @@map("findings")
+}
