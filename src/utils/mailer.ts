@@ -1,34 +1,31 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { logger } from "./logger";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendEmail = async (to: string, subject: string, html: string) => {
   try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false, // Use STARTTLS
-      family: 4, // Forces IPv4 to avoid ENETUNREACH errors on IPv6 addresses
-      auth: {
-        user: process.env.EMAIL_USER?.trim(),
-        pass: process.env.EMAIL_PASS?.replace(/\s+/g, ""), // Remove spaces in App password
-      },
-      tls: {
-        rejectUnauthorized: false, // Added for some hosting environments
-      },
-    } as any);
+    // If we're using Resend onboarding API key, we must use delivered@resend.dev as sender
+    // and can only send to the own email address. 
+    // Once a custom domain is added to Resend, this can be updated.
+    const fromAddress = process.env.EMAIL_FROM || "onboarding@resend.dev";
 
-    const mailOptions = {
-      from: `"RiskLayer" <${process.env.EMAIL_USER}>`,
+    const { data, error } = await resend.emails.send({
+      from: `RiskLayer <${fromAddress}>`,
       to,
       subject,
       html,
-    };
+    });
 
-    const info = await transporter.sendMail(mailOptions);
-    logger.info(`Email sent to ${to}: ${info.messageId}`);
-    return info;
+    if (error) {
+      logger.error(`Resend error for ${to}:`, error);
+      throw error;
+    }
+
+    logger.info(`Email sent to ${to}: ${data?.id}`);
+    return data;
   } catch (error) {
-    logger.error(`Error sending email to ${to}:`, error);
-    throw error; // Re-throw so controllers can handle it if needed
+    logger.error(`Fatal error sending email to ${to}:`, error);
+    throw error;
   }
 };
