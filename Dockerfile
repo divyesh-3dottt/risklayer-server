@@ -1,39 +1,42 @@
-# Use the official Playwright image for Node.js
+# --- Builder Stage ---
 FROM mcr.microsoft.com/playwright:v1.49.0-noble AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files and install ALL dependencies
 COPY package.json package-lock.json ./
-
-# Install all dependencies (including devDependencies for build)
 RUN npm install
 
-# Copy source, configuration and prisma
-COPY src ./src
-COPY configuration ./configuration
-COPY prisma ./prisma
-COPY tsconfig.json ./
+# Copy source code and Prisma schema
+COPY . .
 
-# Build the TypeScript project and generate Prisma Client
+# Generate Prisma Client and Build TypeScript
+RUN npx prisma generate
 RUN npm run build
 
 # --- Runtime Stage ---
+# Use the same base to ensure system dependencies match, but optimize steps
 FROM mcr.microsoft.com/playwright:v1.49.0-noble AS runner
 
 WORKDIR /app
 
-# Copy built files and production dependencies
+# Set production environment
+ENV NODE_ENV=production
+
+# Copy only what's necessary for runtime
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/package-lock.json ./package-lock.json
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/configuration ./configuration
 
-# Install Chromium (specifically what's needed for Playwright)
-RUN npx playwright install chromium
+# Install ONLY production dependencies (much faster and smaller)
+RUN npm install --only=production
 
-# Expose the default port
+# IMPORTANT: Remove the manual browser install. 
+# The mcr.microsoft.com/playwright image ALREADY has Chromium/Firefox/Webkit pre-installed.
+# This saves ~500MB and 2-3 minutes of build time.
+
 EXPOSE 5000
 
 # Start the application
