@@ -128,7 +128,13 @@ export async function startCrawl(scanId: string, startUrl: string) {
         logger.info(`[SCAN:${scanId}] 🌐 Launching Playwright Browser...`);
         browser = await chromium.launch({
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            args: [
+                '--no-sandbox', 
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage', // Memory optimization: avoids /dev/shm issues in Docker
+                '--disable-gpu',           // Resource optimization: no need for GPU on headless server
+                '--single-process'         // Force single process mode to reduce RAM usage on Render
+            ]
         });
 
         const context = await browser.newContext({

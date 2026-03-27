@@ -1,5 +1,5 @@
 # --- Builder Stage ---
-FROM mcr.microsoft.com/playwright:v1.49.0-noble AS builder
+FROM mcr.microsoft.com/playwright:v1.58.2-noble AS builder
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ RUN npm run build
 
 # --- Runtime Stage ---
 # Use the same base to ensure system dependencies match, but optimize steps
-FROM mcr.microsoft.com/playwright:v1.49.0-noble AS runner
+FROM mcr.microsoft.com/playwright:v1.58.2-noble AS runner
 
 WORKDIR /app
 
