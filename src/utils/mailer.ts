@@ -15,7 +15,7 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
       tls: {
         rejectUnauthorized: false, // Added for some hosting environments
       },
-    });
+    } as any);
 
     const mailOptions = {
       from: `"RiskLayer" <${process.env.EMAIL_USER}>`,
